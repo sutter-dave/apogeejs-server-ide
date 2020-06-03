@@ -1,1 +1,2 @@
 # ApogeeNodeElectron
+This is a version of the Apogee application running in electron. In this version, the user has complete access to Node.js features from the application. This is recommended fro doing web service development, since it provides the same environment as the Apogee Server. For any other purpose, such as general programming, the ApogeeWebElectron application is recommended since this provides better security.
