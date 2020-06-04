@@ -1,0 +1,14 @@
+{
+  "name": "apogeejs-electron",
+  "version": "1.0.0-p1",
+  "description": "Electron version of ApogeeJS app with Node.js support",
+  "main": "./main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "electron": "~9.0.0",
+    "core-js": "~3.6.5"
+  },
+  "author": "Dave Sutter"
+}
