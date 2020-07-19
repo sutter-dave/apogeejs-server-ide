@@ -1,5 +1,5 @@
 // File: apogeeAppBundle.cjs.js
-// Version: 1.0.0-p3
+// Version: 1.0.0-p4
 // Copyright (c) 2016-2020 Dave Sutter
 // License: MIT
 
@@ -239,7 +239,7 @@ apogeeutil$1.jsonEquals = function(json1,json2) {
  * This is intended for the purpose of comparing json objects. 
  * 
  *  @param {JSON} json1 - This is a JSON valued object 
- *  @returns {Boolean}  - Returns whether or not the objects are equal
+ *  @returns {JSON} - Returns a order-modified version of the object
  */  
 apogeeutil$1.getNormalizedCopy = function(json) {
     var copiedJson;
@@ -9448,6 +9448,7 @@ let memberFunctionInitializer = this.createMemberFunctionInitializer(model);
             
                 //this is an error in the code
                 if(error.stack) {
+                    console.error("Error calculating member " + this.getFullName(model));
                     console.error(error.stack);
                 }
 
@@ -9593,7 +9594,10 @@ let memberFunctionInitializer = this.createMemberFunctionInitializer(model);
 //add components to this class
 apogeeutil$1.mixin(CodeableMember,ContextHolder);
 
-/** This class encapsulatees a data table for a JSON object */
+/** This class encapsulatees a data table for a JSON object. 
+ * (This object does also support function objects as elements of the json, though
+ * objects using this, such as the JsonTableComponent, may not.)
+*/
 class JsonTable extends CodeableMember {
 
     constructor(name,parentId,instanceToCopy,keepUpdatedFixed,specialCaseIdValue) {
@@ -9761,7 +9765,7 @@ class FunctionTable extends CodeableMember {
         };
 
         //this is called from separate code to make debugging more readable
-        return __functionTableWrapper(initMember);
+        return __functionTableWrapper(initMember,this.getName());
     }
 
     /** Add to the base lock function - The function is lazy initialized so it can call itself without a 
@@ -10949,7 +10953,7 @@ function deleteMember(model,actionData) {
         return actionResult;
     }
     
-    let actionResult = doDelete(model, member);
+    let actionResult = doDelete$1(model, member);
 
     //remove the top-most deleted member from its parent
     let parentId = member.getParentId();
@@ -10966,7 +10970,7 @@ function deleteMember(model,actionData) {
 /** Here we take any actions for deleting the member and its children,
  * except "remove from parent", which we will do only for the top deleted member. 
  * @private */
-function doDelete(model, member) {
+function doDelete$1(model, member) {
 
     let actionResult = {};
     actionResult.member = member;
@@ -10982,7 +10986,7 @@ function doDelete(model, member) {
             let childId = childIdMap[childName];
             let child = model.lookupMemberById(childId);
             if(child) {
-                let childActionResult = doDelete(model, child);
+                let childActionResult = doDelete$1(model, child);
                 actionResult.childActionResults.push(childActionResult);
             }
         }
@@ -11241,7 +11245,7 @@ class CommandHistory {
         
         this._saveCommand(command);
 
-        //set workspace dirty whenever a command is added to history (description as argument thrown in gratuitiously, or now)
+        //set workspace dirty whenever a command is added to history (description as argument thrown in gratuitiously, for now)
         this.eventManager.dispatchEvent("workspaceDirty",command.desc);
     }
     
@@ -21659,6 +21663,7 @@ class DOMObserver {
   }
 
   start() {
+if(window.START_OFF_FLAG) return;
     if (this.observer)
       this.observer.observe(this.view.dom, observeOptions);
     if (useCharData)
@@ -25106,6 +25111,36 @@ ErrorComponent.DEFAULT_MEMBER_JSON = {
     "type": "apogee.ErrorMember"
 };
 
+/** This component is similar to the JsonTableComponent except that it
+ * also supports function elements. When displaying them it replaces the function
+ * element with the string value for that function.
+ * This component only allows the standard JSON view and it also does not support manually
+ * editing the value. The value must be returned from the formula.
+ * This implementation is also inefficient. It is not intended for large data objects.
+ */
+class JsonPlusTableComponent extends Component {
+    
+        
+    constructor(member,modelManager,instanceToCopy,keepUpdatedFixed) {
+        //extend edit component
+        super(member,modelManager,instanceToCopy,keepUpdatedFixed);
+    };
+}
+
+//======================================
+// This is the component generator, to register the component
+//======================================
+
+
+/** This is the display name for the type of component */
+JsonPlusTableComponent.displayName = "Extended Data Cell";
+/** This is the univeral uniaue name for the component, used to deserialize the component. */
+JsonPlusTableComponent.uniqueName = "apogeeapp.ExtendedJsonCell";
+
+JsonPlusTableComponent.DEFAULT_MEMBER_JSON = {
+    "type": "apogee.JsonMember"
+};
+
 /** This module initializes the default component classes. */
 
 let componentInfo = {};
@@ -25198,6 +25233,10 @@ componentInfo.registerPageComponent(FolderFunctionComponent);
 //other components
 componentInfo.FOLDER_COMPONENT_CLASS = FolderComponent;
 componentInfo.ERROR_COMPONENT_CLASS = ErrorComponent;
+
+
+//JSON PLUS COMPONENT
+componentInfo.registerComponent(JsonPlusTableComponent);
 
 /** This class manages the user interface for a model object. */
 class ModelManager extends FieldObject {
@@ -25772,6 +25811,8 @@ class WorkspaceManager extends FieldObject {
             let referenceManager = new ReferenceManager(this.app);
             this.setField("referenceManager",referenceManager);
 
+            this.setField("isDirty",false);
+
             //this is not a field like above because when we do not require a command to change it
             this.fileMetadata = null;
 
@@ -25791,9 +25832,6 @@ class WorkspaceManager extends FieldObject {
         //==============
         this.viewStateCallback = null;
         this.cachedViewState = null;
-
-        //listen to the workspace dirty event from the app
-        this.app.addListener("workspaceDirty",() => this.setIsDirty());
 
         this.isClosed = false;
     }
@@ -25892,16 +25930,15 @@ class WorkspaceManager extends FieldObject {
     }
 
     getIsDirty() {
-        return this.isDirty;
-        
+        return this.getField("isDirty");
     }
     
     setIsDirty() {
-        this.isDirty = true;
+        this.setField("isDirty",true);
     }
     
     clearIsDirty() {
-        this.isDirty = false;
+        this.setField("isDirty",false);
     }
 
     getIsClosed() {
@@ -26138,6 +26175,9 @@ class Apogee {
         
         //command manager
         this.commandManager = new CommandManager(this);
+
+        //listen to the workspace dirty event from the app
+        this.addListener("workspaceDirty",() => this._setWorkspaceIsDirty());
         
         //----------------------------------
         //configure the application
@@ -26237,6 +26277,17 @@ class Apogee {
     clearWorkspaceIsDirty() {
         if(this.workspaceManager) {
             return this.workspaceManager.clearIsDirty();
+        }
+        else {
+            return false;
+        }
+    }
+
+    /** This method returns true if the workspcae contains unsaved data. 
+     * @private */
+    _setWorkspaceIsDirty() {
+        if(this.workspaceManager) {
+            return this.workspaceManager.setIsDirty();
         }
         else {
             return false;
@@ -30669,7 +30720,7 @@ class ConfigurablePanel {
         
         //check for an invalid input
         if((!formInitData)||(!formInitData.layout)||(formInitData.layout.constructor != Array)) {
-            formInitData = ConfigurablePanel.INVALID_INIT_DATA;
+            formInitData = ConfigurablePanel.getErrorMessageLayoutInfo("Invalid form layout!");
         }
         
         //clear data
@@ -30855,6 +30906,10 @@ ConfigurablePanel.INVALID_INIT_DATA = {
             level: 4
         }
     ]
+};
+
+ConfigurablePanel.EMPTY_LAYOUT = {
+    layout: []
 };
 
 /** This is an element that composes the content of a configurable panel.
@@ -31391,6 +31446,322 @@ class InvisibleElement extends ConfigurableElement {
 
 InvisibleElement.TYPE_NAME = "invisible";
 
+/** This is a list element.
+ * 
+ * @class 
+ */
+class ListElement extends ConfigurableElement {
+    constructor(form,elementInitData) {
+        super(form,elementInitData,ConfigurableElement.CONTAINER_CLASS_STANDARD);
+
+        var containerElement = this.getElement();
+
+        this.upUrl = uiutil.getResourcePath("/up_black.png");
+        this.downUrl = uiutil.getResourcePath("/down_black.png");
+        this.closeUrl = uiutil.getResourcePath("/close_black.png");
+        
+        //label
+        if(elementInitData.label) {
+            this.labelElement = document.createElement("span");
+            this.labelElement.className = "apogee_configurablePanelLabel";
+            this.labelElement.innerHTML = elementInitData.label;
+            containerElement.appendChild(this.labelElement);
+        }
+        else {
+            this.labelElement = null;
+        }
+        
+        //initialize the list
+        if(elementInitData.entryType) {
+            this.entryTypes = [elementInitData.entryType];
+            this.isMultitypeList = false;
+        }
+        else if(elementInitData.entryTypes) {
+            this.entryTypes = elementInitData.entryTypes;
+            this.isMultitypeList = true;
+        }
+        
+        this.listEntries = [];
+        this.elementContainer = null;
+        this.listElement = this._createListContainer(); 
+        containerElement.appendChild(this.listElement); 
+        
+        this._postInstantiateInit(elementInitData);
+    }
+    
+    /** This method returns value for this given element, if applicable. If not applicable
+     * this method returns undefined. */
+    getValue() {
+        var listValue = [];
+        this.listEntries.forEach(listEntry => {
+            let elementObject = listEntry.elementObject;
+            if(elementObject.getState() != ConfigurablePanelConstants.STATE_INACTIVE) {
+                var elementValue = elementObject.getValue();
+                if(elementValue !== undefined) {
+                    //we return the values differently for multilists and non-multitype lists
+                    if(this.isMultitypeList) {
+                        let valueEntry = {};
+                        valueEntry.key = elementObject.getKey();
+                        valueEntry.value = elementValue;
+                        listValue.push(valueEntry);
+                    }
+                    else {
+                        listValue.push(elementValue);
+                    }
+                }
+            }
+        });
+        return listValue;
+    }   
+
+    /** This method updates the value for a given element. See the specific element
+     * to see if this method is applicable. */
+    setValue(listValue) {
+        if(Array.isArray(listValue)) {
+            let currentValue = this.getValue();
+            //update values if the list changes
+            //first change event either way (we may later change the general policy on this)
+            if(!apogeeutil.jsonEquals(currentValue,listValue)) {
+
+                //remove the old list entries
+                while(this.listEntries.length > 0 ) {
+                    this._removeListEntry(this.listEntries[0]);
+                }
+
+                //create a new entry for each value
+                listValue.forEach( (valueEntry,index) => {
+                    if(this.isMultitypeList) {
+                        if((valueEntry.key !== undefined)&&(valueEntry.value != undefined)) {
+                            let entryTypeJson = this._lookupEntryTypeJson(valueEntry.key);
+                            if(entryTypeJson) {
+                                this._insertElement(entryTypeJson,valueEntry.value);
+                            }
+                            else {
+                                console.log("List Entry key not found: " + valueEntry.key);
+                            }
+                        }
+                        else {
+                            console.log("Improperly formatted list value for multitypelist!");
+                        }
+                    }
+                    else {
+                        let entryTypeJson = this.entryTypes[0];
+                        if(entryTypeJson) {
+                            this._insertElement(entryTypeJson,valueEntry);
+                        }
+                        else {
+                            console.log("NO entry type set!");
+                        }
+                    }
+                });
+            }
+
+            this._listValueChanged();
+        }
+        else {
+            console.log("Value being set for list is not an array!");
+        }
+    }
+    
+    /** This will call the handler is this panel changes value. */
+    addOnChange(onChange) {
+        this.changeListener = onChange;
+    }
+    
+    //===================================
+    // internal Methods
+    //==================================
+
+    /** This looks up the entry type for a given key, based on the layout key. */
+    _lookupEntryTypeJson(key) {
+        return this.entryTypes.find( entryTypeJson => entryTypeJson.layout.key == key);
+    }
+
+    _listValueChanged() {
+        if(this.changeListener) {
+            this.changeListener(this.getValue(),this.getForm());
+        }
+    }
+    
+    //---------------------
+    // List Management Functions
+    //---------------------
+
+    _createListContainer() {
+        var listContainer = document.createElement("div");
+        listContainer.className = "listElement_listContainer";
+
+        //element container - houses elements
+        let elementContainerWrapper = document.createElement("div");
+        elementContainerWrapper.className = "listElement_elementContainerWrapper";
+        listContainer.appendChild(elementContainerWrapper);
+
+        this.elementContainer = document.createElement("div");
+        this.elementContainer.className = "listElement_elementContainer";
+        elementContainerWrapper.appendChild(this.elementContainer);
+
+        //control bar = has "add" buttons
+        let controlBar = document.createElement("div");
+        controlBar.className = "listElement_listControlBar";
+        this.entryTypes.forEach(entryTypeJson => {
+            let addButton= document.createElement("button");
+            addButton.className = "listElement_addButton";
+            let labelText = entryTypeJson.label ? "+ "+ entryTypeJson.label : "+";
+            addButton.innerHTML = labelText;
+            addButton.onclick = () => this._insertElement(entryTypeJson);
+            controlBar.appendChild(addButton);
+            controlBar.appendChild(document.createElement("br"));
+        });
+        listContainer.appendChild(controlBar);
+
+        return listContainer;
+    }
+
+    _insertElement(entryTypeJson,optionalValue) {
+        let listEntryData = this._createListEntryData(entryTypeJson);
+        this.listEntries.push(listEntryData);
+        this.elementContainer.appendChild(listEntryData.element);
+
+        //set value if applicable
+        if(optionalValue !== undefined) {
+            listEntryData.elementObject.setValue(optionalValue);
+        }
+
+        //add the change listener for this element
+        if(listEntryData.elementObject.addOnChange) {
+            listEntryData.elementObject.addOnChange( () => this._listValueChanged());
+        }
+
+        //nofity change
+        this._listValueChanged();
+    }
+
+    _createListEntryData(entryTypeJson) {
+
+        let listEntry = {};
+
+        //create element object
+        let layout = entryTypeJson.layout;
+        if(!layout) {
+            throw new Error("Layout not found for list entry!");
+        }
+
+        var type = layout.type;
+        if(!type) {
+            throw new Error("Type not found for list entry!");
+        }
+        
+        var constructor = ConfigurablePanel.getTypeConstructor(type);
+        if(!constructor) {
+            throw new Error("Type not found for list element: " + type);
+        }
+
+        var elementObject = new constructor(this.getForm(),layout);
+
+        listEntry.elementObject = elementObject;
+        listEntry.element = this._createListDomElement(listEntry);
+
+        return listEntry;
+    }
+
+    _createListDomElement(listEntry) {
+        let contentElement = listEntry.elementObject.getElement();
+
+        //list element
+        let listElement = document.createElement("div");
+        listElement.className = "listElement_itemElement";
+
+        //content
+        this.contentContainer = document.createElement("div");
+        this.contentContainer.className = "listElement_itemContent";
+        listElement.appendChild(this.contentContainer);
+
+        //control bar
+        let controlBar = document.createElement("div");
+        controlBar.className = "listElement_itemControlBar";
+        let upButton = document.createElement("img");
+        upButton.src = this.upUrl;
+        upButton.className = "listElement_itemButton";
+        upButton.style.position = "absolute";
+        upButton.style.top = "2px";
+        upButton.style.left = "2px";
+        upButton.onclick = () => this._moveListEntryUp(listEntry);
+        controlBar.appendChild(upButton);
+   
+        let downButton = document.createElement("img");
+        downButton.src = this.downUrl;
+        downButton.className = "listElement_itemButton";
+        downButton.style.position = "absolute";
+        downButton.style.top = "15px";
+        downButton.style.left = "2px";
+        downButton.onclick = () => this._moveListEntryDown(listEntry);
+        controlBar.appendChild(downButton);
+   
+        let deleteButton = document.createElement("img");
+        deleteButton.src = this.closeUrl;
+        deleteButton.className = "listElement_itemButton";
+        deleteButton.style.position = "absolute";
+        deleteButton.style.top = "2px";
+        deleteButton.style.left = "20px";
+        deleteButton.onclick = () => this._removeListEntry(listEntry);
+        controlBar.appendChild(deleteButton);
+        
+        this.contentContainer.appendChild(contentElement);
+        listElement.appendChild(controlBar);
+   
+        return listElement;
+    }
+
+    //---------------------
+    // List Element Action Functions
+    //---------------------
+    
+    _moveListEntryUp(entry) {
+        let index = this.listEntries.indexOf(entry);
+        if(index > 0) {
+            //update list position
+            let previousEntry = this.listEntries[index-1];
+            this.listEntries.splice(index-1,2,entry,previousEntry);
+            //update dom positions 1 - using dom functions
+            this.elementContainer.insertBefore(entry.element,entry.element.previousSibling);
+            
+            //update dom positions 2 - reinsert all (maybe this is safer?)
+            //while(this.elementContainer.hasChildNodes()) this.elementContainer.removeChild(this.elementContainer.firstChild);
+            //listEntries.forEach( childEntry => this.elementContainer.appendChild(childEntry.element));
+
+            //nofity change
+            this._listValueChanged();
+        }
+    }
+
+    _moveListEntryDown(entry) {
+        let index = this.listEntries.indexOf(entry);
+        if(index < this.listEntries.length - 1) {
+            //update list position
+            let nextEntry = this.listEntries[index+1];
+            this.listEntries.splice(index,2,nextEntry,entry);
+            //update dom positions
+            this.elementContainer.insertBefore(entry.element.nextSibling,entry.element);
+
+            //nofity change
+            this._listValueChanged();
+        }
+    }
+
+    _removeListEntry(entry) {
+        let index = this.listEntries.indexOf(entry);
+        //remove from listEntries
+        this.listEntries.splice(index,1);
+        //remove from DOM
+        this.elementContainer.removeChild(entry.element);
+
+        //nofity change
+        this._listValueChanged();
+    }
+}
+
+ListElement.TYPE_NAME = "list";
+
 /** This is an text field element configurable element.
  * 
  * @class 
@@ -31468,6 +31839,7 @@ class RadioGroupElement extends ConfigurableElement {
         //radio buttons
         this.buttonList = [];
         var groupName = elementInitData.groupName;
+        if(!groupName) groupName = getRandomString();
         var addButton = buttonInfo => {
             var buttonContainer = uiutil.createElement("div");
             buttonContainer.style.display = elementInitData.horizontal ? "inline-block" : "block";
@@ -31543,6 +31915,10 @@ class RadioGroupElement extends ConfigurableElement {
 }
 
 RadioGroupElement.TYPE_NAME = "radioButtonGroup";
+
+function getRandomString() {
+    return Math.random().toString(36).substring(2, 15);
+}
 
 /** This is an text field element configurable element.
  * 
@@ -31833,6 +32209,7 @@ ConfigurablePanel.addConfigurableElement(DropdownElement);
 ConfigurablePanel.addConfigurableElement(HeadingElement);
 ConfigurablePanel.addConfigurableElement(HTMLDisplayElement);
 ConfigurablePanel.addConfigurableElement(InvisibleElement);
+ConfigurablePanel.addConfigurableElement(ListElement);
 ConfigurablePanel.addConfigurableElement(PanelElement);
 ConfigurablePanel.addConfigurableElement(RadioGroupElement);
 ConfigurablePanel.addConfigurableElement(SpacerElement);
@@ -53248,6 +53625,57 @@ let lineFunctions = {
     
 };
 
+/** This dialog has a message and a number of buttons and associated actions. */
+function showSimpleActionDialog(msg,buttonTextList,buttonActionList) {
+
+    var dialog = dialogMgr.createDialog({"movable":true});
+    
+    //add a scroll container
+    var contentContainer = uiutil.createElement("div",null,
+        {
+			"display":"block",
+            "position":"relative",
+            "top":"0px",
+            "height":"100%",
+            "overflow": "auto"
+        });
+	dialog.setContent(contentContainer,uiutil.SIZE_WINDOW_TO_CONTENT);
+    
+	var content = uiutil.createElement("div",null,
+			{
+				"display":"table",
+				"overflow":"hidden"
+			});
+	contentContainer.appendChild(content);
+    
+    var line;
+  
+    //title
+    line = uiutil.createElement("div",{"className":"dialogLine"});
+    line.appendChild(uiutil.createElement("div",{"className":"dialogTitle","innerHTML":msg}));
+    content.appendChild(line);
+    
+    //buttons
+    line = uiutil.createElement("div",{"className":"dialogLine"});
+    for(let i = 0; i < buttonTextList.length; i++) {
+        let buttonLabel = buttonTextList[i];
+        let buttonAction = () => {
+            buttonActionList[i]();
+            dialogMgr.closeDialog(dialog);
+        };
+        line.appendChild(uiutil.createElement("button",{"className":"dialogButton","innerHTML":buttonLabel,"onclick":buttonAction}));
+        content.appendChild(line);
+    }
+    dialog.setContent(content,uiutil.SIZE_WINDOW_TO_CONTENT);  
+    
+    //show dialog
+    dialogMgr.showDialog(dialog);
+    
+    //size the dialog to the content
+    dialog.fitToContent();
+    dialog.centerInParent();
+}
+
 //=====================================
 // UI Entry Point
 //=====================================
@@ -53284,6 +53712,8 @@ function updateComponent(componentView) {
             }
         }
         
+        let commandsDeleteComponent = false;
+        let deleteMsg;
         var commands = [];
         
         //--------------
@@ -53391,9 +53821,9 @@ function updateComponent(componentView) {
                         if(newParentCommands.editorSetupCommand) commands.push(newParentCommands.editorSetupCommand);
                         //check if we need to add any delete component commands  - we shouldn't have any since we are not overwriting data here
                         if(newParentCommands.deletedComponentCommands) {
-                            //make sure the user wants to proceed
-                            let deletedComponentNames = newParentCommands.deletedComponentCommands.map(command => command.memberId);
-                            let doDelete = confirm("Are you sure you want to delete these apogee nodes: " + deletedComponentNames);
+                            //flag a delete will be done
+                            commandsDeleteComponent = true;
+                            deleteMsg = "Are you sure you want to delete these apogee nodes: " + deletedComponentNames + "?";
                             
                             //return if user rejects
                             if(!doDelete) return;
@@ -53441,12 +53871,26 @@ function updateComponent(componentView) {
             command = commands[0];
         }
         
-        //execute command
-        if(command) {   
-            modelManager.getApp().executeCommand(command);
-        }
+        //command action
+        let doAction = () => {
+            if(command) {   
+                modelManager.getApp().executeCommand(command);
+            }
 
-        returnToEditor(componentView,submittedValues.name);
+            returnToEditor(componentView,submittedValues.name);
+        };
+
+        if(commandsDeleteComponent) {
+            //if there is a delete, verify the user wants to do this
+            let cancelAction = () => {
+                returnToEditor(componentView,submittedValues.name);
+            };
+            showSimpleActionDialog(deleteMsg,["OK","Cancel"],[doAction,cancelAction]);
+        }
+        else {
+            //otherwise just take the action
+            doAction();
+        }
 
         //return true to close the dialog
         return true;
@@ -53688,6 +54132,8 @@ function addComponent(appView,app,componentClass,optionalInitialProperties,optio
             let modelManager = modelView.getModelManager();
             let parentMemberId = userInputProperties.parentId;
 
+            let commandsDeleteComponent = false;
+            let deleteMsg;
             let commands = [];
             
             //create the model command
@@ -53713,11 +54159,9 @@ function addComponent(appView,app,componentClass,optionalInitialProperties,optio
 
                     //add any delete commands
                     if(additionalCommandInfo.deletedComponentCommands){
-                        //make sure the user wants to proceed
-                        let doDelete = confirm("Are you sure you want to delete these apogee nodes: " + additionalCommandInfo.deletedComponentShortNames);
-                        
-                        //return if user rejects
-                        if(!doDelete) return;
+                        //flag a delete will be done
+                        commandsDeleteComponent = true;
+                        deleteMsg = "Are you sure you want to delete these apogee nodes: " + additionalCommandInfo.deletedComponentShortNames + "?";
 
                         commands.push(...additionalCommandInfo.deletedComponentCommands);
                     } 
@@ -53747,15 +54191,33 @@ function addComponent(appView,app,componentClass,optionalInitialProperties,optio
             }
             
             //execute command
-            app.executeCommand(commandData);
+            let doAction = () => {
+                app.executeCommand(commandData);
 
-            //give focus back to editor
-            if(parentComponentView) {
-                parentComponentView.giveEditorFocusIfShowing();
+                //give focus back to editor
+                if(parentComponentView) {
+                    parentComponentView.giveEditorFocusIfShowing();
+                }
+            };
+
+            if(commandsDeleteComponent) {
+                //if there is a delete, verify the user wants to do this
+                let cancelAction = () => {
+                    //give focus back to editor
+                    if(parentComponentView) {
+                        parentComponentView.giveEditorFocusIfShowing();
+                    }
+                };
+                showSimpleActionDialog(deleteMsg,["OK","Cancel"],[doAction,cancelAction]);
+            }
+            else {
+                //otherwise just take the action
+                doAction();
             }
 
             //return true to close the dialog
             return true;
+
         };
 
         //give foxus back to editor
@@ -56182,10 +56644,25 @@ class ApogeeWebView {
 
 function deleteComponent(componentView) {
 
-    var doDelete = confirm("Are you sure you want to delete this object?");
-    if(!doDelete) {
-        return;
+    let doDelete = () => {
+        deleteComponentImpl(componentView);
+        returnToEditor$1(componentView);
+    };
+
+    let doCancel = () => {
+        returnToEditor$1(componentView);
+    };
+    showSimpleActionDialog("Are you sure you want to delete this object:" + componentView.getName() + "?",["OK","Cancel"],[doDelete,doCancel]);
+}
+
+function returnToEditor$1(componentView) {
+    let parentComponentView = componentView.getParentComponentView();
+    if(parentComponentView) {
+        parentComponentView.giveEditorFocusIfShowing();
     }
+}
+
+function deleteComponentImpl(componentView) {
 
     var modelManager = componentView.getModelView().getModelManager(); 
     var component = componentView.getComponent();
@@ -56833,16 +57310,12 @@ class ComponentView {
                 var parentComponentView = this.getParentComponentView();
                 if((parentComponentView)&&(parentComponentView.constructor.hasTabEntry)) {
 
+                    //execute command to select child
+                    let command = parentComponentView.getSelectApogeeNodeCommand(this.getName());
+                    this.getModelView().getApp().executeCommand(command);
+
                     //open the parent and bring this child to the front
                     makeTabActive(parentComponentView);
-
-                    //parentComponentView.showChild(this);
-      
-                    alert("Implement show child here!!!");
-                    // let commandData = this.selectApogeeNode(childComponentView.getName());
-                    // if(commandData) {
-                    //     ???
-                    // }
 
                 }
             };
@@ -57156,11 +57629,19 @@ class AceTextEditor extends DataDisplay {
     createEditor() {
         var editor = ace_1.edit(this.editorDiv);
         editor.setOptions(this.editorOptions);
-        editor.renderer.setShowGutter(false);
+        //editor.renderer.setShowGutter(false);
         editor.setHighlightActiveLine(false);
-        editor.setTheme("ace/theme/eclipse"); //good
+        editor.setTheme("ace/theme/eclipse");
         editor.getSession().setMode(this.aceMode); 
-        
+        //below lets us change the line numbers
+        // editor.getSession().gutterRenderer =  {
+        //     getWidth: function(session, lastLineNumber, config) {
+        //         return lastLineNumber.toString().length * config.characterWidth;
+        //     },
+        //     getText: function(session, row) {
+        //         return row+20;
+        //     }
+        // };
         editor.$blockScrolling = Infinity;
         editor.renderer.attachToShadowRoot();        
         
@@ -57449,6 +57930,18 @@ class ConfigurableFormEditor extends DataDisplay {
             };
             this.panel.addOnChange(onChange);
         }     
+    }
+
+    //===========================
+    // Utilities for special form layouts
+    //===========================
+
+    static getErrorLayout(errorMsg) {
+        return ConfigurablePanel.getErrorMessageLayoutInfo(errorMsg);
+    }
+
+    static getEmptyLayout() {
+        return ConfigurablePanel.EMPTY_LAYOUT;
     }
 }
 
@@ -119216,6 +119709,8 @@ class ParentComponentView extends ComponentView {
 
         //this will hold the resulting command
         let apogeeCommand;
+        let commandsDeleteComponent = false;
+        let deleteMsg;
 
         let initialSelection = editorState.selection;
         let initialMarks = editorState.marks;
@@ -119386,8 +119881,9 @@ class ParentComponentView extends ComponentView {
             // Get verificaion if we are deleting anything
             //-------------------
             if(allDeletedNames.length > 0) {
-                let doDelete = confirm("Are you sure you want to delete these apogee nodes: " + allDeletedNames);
-                if(!doDelete) return;
+                //flag a delete will be done
+                commandsDeleteComponent = true;
+                deleteMsg = "Are you sure you want to delete these apogee nodes: " + allDeletedNames + "?";
             }
 
             //-------------------------
@@ -119408,7 +119904,23 @@ class ParentComponentView extends ComponentView {
         //execute the command
         //-------------------
         if(apogeeCommand) {
-            this.getModelView().getApp().executeCommand(apogeeCommand);
+
+            let doAction = () => {
+                this.getModelView().getApp().executeCommand(apogeeCommand);
+                this.giveEditorFocusIfShowing();
+            };
+
+            if(commandsDeleteComponent) {
+                //if there is a delete, verify the user wants to do this
+                let cancelAction = () => {
+                    this.giveEditorFocusIfShowing();
+                };
+                showSimpleActionDialog(deleteMsg,["OK","Cancel"],[doAction,cancelAction]);
+            }
+            else {
+                //otherwise just take the action
+                doAction();
+            }
         }
     }
 
@@ -120958,7 +121470,7 @@ class LiteratePageComponentDisplay$1 {
                 //add handler
                 buttonElement.onclick = () => {
 
-                    this.editorView.dom.focus();
+                    this.editorView.focus();
 
                     var initialValues = {};
                     var parentMember = pageComponent.getParentFolderForChildren();
@@ -120975,7 +121487,7 @@ class LiteratePageComponentDisplay$1 {
         textElement.innerHTML = "Additional Components...";
         buttonElement.onclick = () => {
 
-            this.editorView.dom.focus();
+            this.editorView.focus();
 
             var initialValues = {};
             var parentMember = pageComponent.getParentFolderForChildren();
@@ -121070,6 +121582,14 @@ class LiteratePageComponentDisplay$1 {
     /** @protected */
     tabShown() {
         this.isShowing = true;
+        if(this.editorView) {
+            this.editorView.focus();
+            if(this.editorView.state) {
+                let tr = this.editorView.state.tr;
+                tr.scrollIntoView();
+                setTimeout(() => this.editorView.dispatch(tr),0);
+            }
+        }
         this.dispatchEvent(uiutil.SHOWN_EVENT,this);
     }
 
@@ -121320,11 +121840,14 @@ class DynamicFormView extends ComponentView {
                         getCommandMessenger: () => new UiCommandMessenger(this,functionMember.getId())
                     };
                     try {
-                        return layoutFunction(admin);
+                        let layout = layoutFunction(admin);
+                        if(layout) return layout;
+                        else return ConfigurableFormEditor.getEmptyLayout();
                     }
                     catch(error) {
-                        console.error("Error reading form layout: " + this.getName());
+                        console.error("Error reading form layout " + this.getName() + ": " + error.toString());
                         if(error.stack) console.error(error.stack);
+                        return ConfigurableFormEditor.getErrorLayout("Error in layout: " + error.toString())
                     }
                 }
                 //if we get here there was a problem with the layout
@@ -121454,11 +121977,14 @@ class FormDataComponentView extends ComponentView {
                 let layoutFunction = layoutFunctionMember.getData();   
                 if(layoutFunction instanceof Function) {
                     try { 
-                        return layoutFunction();
+                        let layout = layoutFunction();
+                        if(layout) return layout;
+                        else return ConfigurableFormEditor.getEmptyLayout();
                     }
                     catch(error) {
-                        console.error("Error reading form layout: " + this.getName());
+                        console.error("Error reading form layout " + this.getName() + ": " + error.toString());
                         if(error.stack) console.error(error.stack);
+                        return ConfigurableFormEditor.getErrorLayout("Error in layout: " + error.toString())
                     }
                 }
             }
@@ -122048,6 +122574,179 @@ ErrorComponentView.hasTabEntry = false;
 ErrorComponentView.hasChildEntry = true;
 ErrorComponentView.ICON_RES_PATH = "/componentIcons/genericDataTable.png";
 
+class JsonPlusTableComponentView extends ComponentView {
+
+    constructor(modelView,JsonPlusTableComponent) {
+        super(modelView,JsonPlusTableComponent);
+    }
+
+    //==============================
+    // Protected and Private Instance Methods
+    //==============================
+
+    /**  This method retrieves the table edit settings for this component instance
+     * @protected */
+    getTableEditSettings() {
+        return JsonPlusTableComponentView.TABLE_EDIT_SETTINGS;
+    }
+
+    /** This method should be implemented to retrieve a data display of the give type. 
+     * @protected. */
+    getDataDisplay(displayContainer,viewType) {
+        
+        var dataDisplaySource;
+        var app = this.getModelView().getApp();
+        
+        
+        //create the new view element;
+        switch(viewType) {
+            case JsonPlusTableComponentView.VIEW_DATA:
+                dataDisplaySource = this.getDataSource();
+                return new AceTextEditor(displayContainer,dataDisplaySource,"ace/mode/json",AceTextEditor.OPTION_SET_DISPLAY_SOME);
+                
+            case JsonPlusTableComponentView.VIEW_CODE:
+                dataDisplaySource = dataDisplayHelper.getMemberFunctionBodyDataSource(app,this,"member",DEFAULT_DATA_VALUE$1);
+                return new AceTextEditor(displayContainer,dataDisplaySource,"ace/mode/javascript",AceTextEditor.OPTION_SET_DISPLAY_MAX);
+                
+            case JsonPlusTableComponentView.VIEW_SUPPLEMENTAL_CODE:
+                dataDisplaySource = dataDisplayHelper.getMemberSupplementalDataSource(app,this,"member",DEFAULT_DATA_VALUE$1);
+                return new AceTextEditor(displayContainer,dataDisplaySource,"ace/mode/javascript",AceTextEditor.OPTION_SET_DISPLAY_MAX);
+                
+            default:
+    //temporary error handling...
+                alert("unrecognized view element!");
+                return null;
+        }
+    }
+
+    
+    /** This data source is read only (no edit). It returns text for a json */
+    getDataSource() {
+
+        return {
+            doUpdate: () => {
+                //return value is whether or not the data display needs to be udpated
+                let component = this.getComponent();
+                let reloadData = component.isMemberDataUpdated("member");
+                let reloadDataDisplay = false;
+                return {reloadData,reloadDataDisplay};
+            },
+
+            getData: () => {
+                let member = this.getComponent().getMember();
+                let jsonPlus = member.getData();
+
+                var textData;
+                if(jsonPlus == apogeeutil.INVALID_VALUE) {
+                    //for invalid input, convert to display an empty string
+                    textData = "";
+                }
+                else if(jsonPlus === null) {
+                    textData = "null";
+                }
+                else if(jsonPlus === undefined) {
+                    textData = "undefined";
+                }
+                else {
+                    let modifiedValueJson = replaceFunctions(jsonPlus);
+                    textData = JSON.stringify(modifiedValueJson,null,FORMAT_STRING$1);
+                }
+
+                return textData;
+            }
+        }
+    }
+
+
+}
+
+
+const FORMAT_STRING$1 = "\t";
+
+function replaceFunctions(jsonPlus) {
+    var copiedJson;
+
+    var objectType = apogeeutil.getObjectType(jsonPlus);
+    
+    switch(objectType) {
+        case "Object":
+            copiedJson = replaceFunctionInObject(jsonPlus);
+            break;
+            
+        case "Array": 
+            copiedJson = replaceFunctionsInArray(jsonPlus);
+            break;
+
+        case "Function": 
+            //copiedJson = FUNCTION_REPLACEMENT_STRING;
+            copiedJson = jsonPlus.toString();
+            break;
+            
+        default:
+            copiedJson = jsonPlus;
+    }
+    
+    return copiedJson;
+}
+
+function replaceFunctionInObject(jsonPlus) {
+    var copiedJson = {};
+    for(let key in jsonPlus) {
+        copiedJson[key] = replaceFunctions(jsonPlus[key]);
+    }
+    return copiedJson;
+}
+
+function replaceFunctionsInArray(jsonPlus) {
+    var copiedJson = [];
+    for(var i = 0; i < jsonPlus.length; i++) {
+        var element = jsonPlus[i];
+        copiedJson.push(apogeeutil.getNormalizedCopy(element));
+    }
+    return copiedJson;
+}
+
+/** This is used as the default data value if we clear the code. It really should be a function of the data view,
+ * since in grid mode this is an invalid value. Support for that shold be added. */
+let DEFAULT_DATA_VALUE$1 = "";
+
+//===============================
+// Internal Settings
+//===============================
+
+JsonPlusTableComponentView.VIEW_DATA = "Data";
+JsonPlusTableComponentView.VIEW_CODE = "Formula";
+JsonPlusTableComponentView.VIEW_SUPPLEMENTAL_CODE = "Private";
+
+JsonPlusTableComponentView.VIEW_MODES = [
+    JsonPlusTableComponentView.VIEW_DATA,
+    JsonPlusTableComponentView.VIEW_CODE,
+    JsonPlusTableComponentView.VIEW_SUPPLEMENTAL_CODE
+];
+
+JsonPlusTableComponentView.TABLE_EDIT_SETTINGS = {
+    "viewModes": JsonPlusTableComponentView.VIEW_MODES,
+    "defaultView": JsonPlusTableComponentView.VIEW_DATA,
+    "emptyDataValue": ""
+};
+
+//===============================
+// External Settings
+//===============================
+
+/** This is the component name with which this view is associated. */
+JsonPlusTableComponentView.componentName = "apogeeapp.ExtendedJsonCell";
+
+/** If true, this indicates the component has a tab entry */
+JsonPlusTableComponentView.hasTabEntry = false;
+/** If true, this indicates the component has an entry appearing on the parent tab */
+JsonPlusTableComponentView.hasChildEntry = true;
+/** This is the icon url for the component. */
+JsonPlusTableComponentView.ICON_RES_PATH = "/componentIcons/dataTable.png";
+/** This field gives the default value for the JSON taht should be deserialized to
+ * create the member for this object. The field "name" can be omitted. This will 
+ * be added when the member is created. */
+
 registerComponentView(JsonTableComponentView);
 registerComponentView(FolderComponentView);
 registerComponentView(FunctionComponentView);
@@ -122059,6 +122758,7 @@ registerComponentView(CustomComponentView);
 registerComponentView(CustomDataComponentView);
 
 setErrorComponentView(ErrorComponentView);
+registerComponentView(JsonPlusTableComponentView);
 
 /** This function initializes the resources paths. Thuis covers the following paths
  * - "resources" folder - where the resource images are held
