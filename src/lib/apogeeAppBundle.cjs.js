@@ -1,5 +1,5 @@
 // File: apogeeAppBundle.cjs.js
-// Version: 1.0.0-p4
+// Version: 1.0.0-p5
 // Copyright (c) 2016-2020 Dave Sutter
 // License: MIT
 
@@ -11315,6 +11315,10 @@ class CommandHistory {
             if(!commandSuccess) {
                 this._commandUndoneFailed();
             }
+            else {
+                //flag workspace as dirty
+                this.eventManager.dispatchEvent("workspaceDirty",command.desc);
+            }
         }
         else {
             //the ui should not let us get here
@@ -11329,6 +11333,10 @@ class CommandHistory {
             let commandSuccess = this.commandManager.executeCommand(command.redoCmd,true);
             if(!commandSuccess) {
                 this._commandRedoneFailed();
+            }
+            else {
+                //flag workspace as dirty
+                this.eventManager.dispatchEvent("workspaceDirty",command.desc);
             }
         }
         else {
@@ -25811,10 +25819,8 @@ class WorkspaceManager extends FieldObject {
             let referenceManager = new ReferenceManager(this.app);
             this.setField("referenceManager",referenceManager);
 
-            this.setField("isDirty",false);
-
             //this is not a field like above because when we do not require a command to change it
-            this.fileMetadata = null;
+            this.isDirty = false;
 
             //temporary
             this.created = true;
@@ -25822,6 +25828,7 @@ class WorkspaceManager extends FieldObject {
         else {
             //this is not a field like above because when we do not require a command to change it
             this.fileMetadata = instanceToCopy.fileMetadata;
+            this.isDirty = instanceToCopy.isDirty;
 
             //temporary
             this.created = false;
@@ -25930,15 +25937,15 @@ class WorkspaceManager extends FieldObject {
     }
 
     getIsDirty() {
-        return this.getField("isDirty");
+        return this.isDirty;
     }
     
     setIsDirty() {
-        this.setField("isDirty",true);
+        this.isDirty = true;
     }
     
     clearIsDirty() {
-        this.setField("isDirty",false);
+        this.isDirty = false;
     }
 
     getIsClosed() {
@@ -54284,20 +54291,27 @@ function closeWorkspace(app) {
         alert("There is no workspace close.");
         return;
     }
-
-    //
-    if(activeWorkspaceManager.getIsDirty()) {
-        var doClose = confirm("There is unsaved data. Are you sure you want to close the workspace?");
-        if(!doClose) {
-            return;
-        }
-    }
     
     var commandData = {};
     commandData.type = "closeWorkspace";
 
-    app.executeCommand(commandData);
+    let doAction = () => app.executeCommand(commandData);
+
+    //if the workspace is not saved give the user a warning and chance to cancel
+    if(activeWorkspaceManager.getIsDirty()) {
+        let cancelAction = () => true;
+        showSimpleActionDialog("There is unsaved data. Are you sure you want to close the workspace?",["Close","Cancel"],[doAction,cancelAction]);
+    }
+    else {
+        doAction();
+    }
 }
+
+
+// //give focus back to editor
+// if(parentComponentView) {
+//     parentComponentView.giveEditorFocusIfShowing();
+// }
 
 //=====================================
 // UI Entry Point
@@ -54625,19 +54639,17 @@ function updateLink(app,referenceEntry,displayInfo) {
 /** This method deletes a link in the workspace. */
 function removeLink(app,referenceEntry,displayInfo) {
 
-    var doDelete= confirm("Are you sure you want to delete this link?");
-
-    //create on submit callback
-    if(doDelete) {
-        
-        var commandData = {};
+    var commandData = {};
         commandData.type = "deleteLink";
         commandData.entryType = displayInfo.REFERENCE_TYPE;
         commandData.url = referenceEntry.getUrl();
 
-        //run command
-        app.executeCommand(commandData);
-    }
+    //create on submit callback
+    let doAction = () => app.executeCommand(commandData);
+    let cancelAction = () => true;
+
+    //verify the delete
+    showSimpleActionDialog("Are you sure you want to delete this link?",["Delete","Cancel"],[doAction,cancelAction]);
 }
 
 class ReferenceEntryView {
@@ -119907,15 +119919,18 @@ class ParentComponentView extends ComponentView {
 
             let doAction = () => {
                 this.getModelView().getApp().executeCommand(apogeeCommand);
-                this.giveEditorFocusIfShowing();
             };
 
             if(commandsDeleteComponent) {
+                let okAction = () => {
+                    doAction();
+                    this.giveEditorFocusIfShowing();
+                };
                 //if there is a delete, verify the user wants to do this
                 let cancelAction = () => {
                     this.giveEditorFocusIfShowing();
                 };
-                showSimpleActionDialog(deleteMsg,["OK","Cancel"],[doAction,cancelAction]);
+                showSimpleActionDialog(deleteMsg,["OK","Cancel"],[okAction,cancelAction]);
             }
             else {
                 //otherwise just take the action
@@ -122797,6 +122812,7 @@ var apogeeViewLib = /*#__PURE__*/Object.freeze({
     getComponentViewClass: getComponentViewClass,
     get ERROR_COMPONENT_VIEW_CLASS () { return ERROR_COMPONENT_VIEW_CLASS; },
     showConfigurableDialog: showConfigurableDialog,
+    showSimpleActionDialog: showSimpleActionDialog,
     UiCommandMessenger: UiCommandMessenger
 });
 
