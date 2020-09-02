@@ -9,6 +9,9 @@
         <script type="text/javascript">
             let {appInit,getWorkspaceIsDirty} = require("./app.js");
 
+            const __apogee_version__ = "APOGEE_VERSION";
+            const __browser__ = false;
+
             let init = () => setTimeout(appInit,1000);
 
             let isWorkspaceDirty = () => getWorkspaceIsDirty();
