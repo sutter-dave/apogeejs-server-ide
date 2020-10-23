@@ -10,6 +10,11 @@ __globals__.apogeeapp = apogeeapp;
 __globals__.apogeeui = apogeeui;
 __globals__.apogeeview = apogeeview;
 
+//__globals__.apogeeLog = (msg) => console.log(message);
+__globals__.apogeeUserAlert = (msg) => apogeeview.showSimpleActionDialog(msg,null,["OK"]);
+__globals__.apogeeUserConfirm = (msg,okText,cancelText,okAction,cancelAction,defaultToOk) => apogeeview.showSimpleActionDialog(msg,null,[okText,cancelText],[okAction,cancelAction]);
+__globals__.apogeeUserConfirmSynchronous = (msg,okText,cancelText,defaultToOk) => confirm(msg);
+
 let appView;
 
 function appInit() {

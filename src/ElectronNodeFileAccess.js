@@ -90,7 +90,7 @@ class ElectronNodeFileAccess extends BaseFileAccess {
         
         var onComplete = function(err) {
             if(err) {
-                alert("Error: " + err.message);
+                apogeeUserAlert("Error: " + err.message);
             }
             else {
                 if(onSave) {

@@ -7,7 +7,7 @@ apogeeapp.app.Apogee.prototype.addToMenuBar = function(menuBar,menus) {
     //add an exit menu item to the file menu
     var menu = menus["Workspace"];
     if(!menu) {
-        alert("Implementation Error - Workspace menu not found!");
+        apogeeUserAlert("Implementation Error - Workspace menu not found!");
     }
     var exitCallback = apogeeapp.app.Apogee.getExitCallback();
     menu.addCallbackMenuItem("Exit",exitCallback);
