@@ -1,5 +1,5 @@
 {
-  "name": "apogeejs-electron",
+  "name": "apogeejs-server-ide",
   "version": "0.0.0-pAPOGEE",
   "description": "Electron version of ApogeeJS app with Node.js support",
   "main": "./main.js",
@@ -10,5 +10,7 @@
     "electron": "~9.0.0",
     "core-js": "~3.6.5"
   },
-  "author": "Dave Sutter"
+  "author": "Dave Sutter",
+  "preferGlobal": true,
+  "bin": { "apogeejs-server-ide": "./electron-cli.js"}
 }
