@@ -1,4 +1,4 @@
-const {apogeeapp} = require("./lib/apogeeAppBundle.cjs.js");
+const apogeeapp = require("apogeejs-app-lib");
 const BaseFileAccess = apogeeapp.BaseFileAccess;
 
 /* 

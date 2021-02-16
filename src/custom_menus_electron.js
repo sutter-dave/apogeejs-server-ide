@@ -1,5 +1,5 @@
     
-const Menu = require("./lib/apogeeUiLib.cjs.js");
+const Menu = require("apogeejs-ui-lib");
 
 /** This method adds to the standard apogee menus.  */
 apogeeapp.app.Apogee.prototype.addToMenuBar = function(menuBar,menus) {

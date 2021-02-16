@@ -1,0 +1,32 @@
+{
+  "name": "apogeejs-server-ide",
+  "version": "0.0.0-pAPOGEE",
+  "description": "Electron version of ApogeeJS app with Node.js support",
+  "main": "./src/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "electron": "~9.0.0",
+    "core-js": "^2.0.0",
+    "apogeejs-util-lib": "file:../test-node-libs/apogeejs-util-lib/v2.0.0-p1",
+    "apogeejs-base-lib": "file:../test-node-libs/apogeejs-base-lib/v2.0.0-p1",
+    "apogeejs-model-lib": "file:../test-node-libs/apogeejs-model-lib/v2.0.0-p1",
+    "apogeejs-app-lib": "file:../test-node-libs/apogeejs-app-lib/v2.0.0-p1",
+    "apogeejs-ui-lib": "file:../test-node-libs/apogeejs-ui-lib/v2.0.0-p1",
+    "apogeejs-view-lib": "file:../test-node-libs/apogeejs-view-lib/v2.0.0-p1",
+    "apogeejs-appview-lib": "file:../test-node-libs/apogeejs-appview-lib/v2.0.0-p1",
+    "prosemirror-model": "^1.0.0",
+    "prosemirror-state": "^1.0.0",
+    "prosemirror-view": "^1.0.0",
+    "prosemirror-transform": "^1.0.0",
+    "prosemirror-keymap": "^1.0.0",
+    "prosemirror-commands": "^1.0.0",
+    "prosemirror-gapcursor": "^1.0.0"
+  },
+  "author": "Dave Sutter",
+  "preferGlobal": true,
+  "bin": {
+    "apogeejs-server-ide": "./electron-cli.js"
+  }
+}
