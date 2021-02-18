@@ -1,18 +1,13 @@
-const apogeeapp = require("apogeejs-app-lib");
-const BaseFileAccess = apogeeapp.BaseFileAccess;
-
 /* 
  * This class provides file open and save in electron.
  */
-class ElectronNodeFileAccess extends BaseFileAccess {
+class ElectronNodeFileAccess {
     
     //========================================
     // Public
     //========================================
     
-    constructor() {
-        super();
-    }
+    constructor() {}
     
     /**
      * This method returns fileMetadata appropriate for a new workspace.
