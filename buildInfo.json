@@ -1,0 +1,63 @@
+{
+    "repoName": "apogeejs-electron-node",
+
+    "npmModule": {
+        "taskList": [
+            {
+                "type": "copyAndReplace",
+                "srcFileUrl": "/apogeejs-electron-node/package.json",
+                "replacementList": [
+                    {
+                        "marker": "[RELEASE_VERSION]",
+                        "name": "RELEASE_VERSION"
+                    },
+                    {
+                        "marker": "[APOGEE_BUNDLE_VERSION]",
+                        "name": "APOGEE_BUNDLE_VERSION"
+                    }
+                ]
+            },
+            {
+                "type": "copyFileList",
+                "srcFileUrlList": [
+                    "/apogeejs-app-bundle/style/cssBundle.css"
+                ],
+                "childFolder": "style"
+            },
+            {
+                "type": "copyFileList",
+                "srcFileUrlList": [
+                    "/apogeejs-app-bundle/resources/**/*"
+                ],
+                "childFolder": "resources"
+            },
+            {
+                "type": "copyFileList",
+                "srcFileUrlList": [
+                    "/apogeejs-app-bundle/ace_includes/**/*"
+                ],
+                "childFolder": "ace_includes"
+            },
+            {
+                "type": "copyFileList",
+                "srcFileUrlList": [
+                    "/apogeejs-app-bundle/src/debugHook.js",
+                    "/apogeejs-app-bundle/src/nodeGlobals.js",
+                    "/apogeejs-electron-node/src/**/*"
+                ],
+                "childFolder": "src"
+            },
+            {
+                "type": "copyAndReplace",
+                "srcFileUrl": "/apogeejs-electron-node/web/apogee.html",
+                "replacementList": [
+                    {
+                        "marker": "[RELEASE_VERSION]",
+                        "name": "RELEASE_VERSION"
+                    }
+                ],
+                "childFolder": "web"
+            }
+        ]
+    }
+}
