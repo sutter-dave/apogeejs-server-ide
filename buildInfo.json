@@ -9,11 +9,14 @@
                 "replacementList": [
                     {
                         "marker": "[RELEASE_VERSION]",
-                        "libVersion": "this"
+                        "lib": "this",
+                        "type": "version"
+                        
                     },
                     {
-                        "marker": "[APOGEE_BUNDLE_VERSION]",
-                        "libVersion": "apogeejs-app-bundle"
+                        "marker": "[APOGEE_BUNDLE_DEP_VERSION]",
+                        "valueName": "APOGEE_BUNDLE_DEP_VERSION",
+                        "type": "additionalValue"
                     }
                 ]
             },
@@ -53,7 +56,8 @@
                 "replacementList": [
                     {
                         "marker": "[RELEASE_VERSION]",
-                        "libVersion": "this"
+                        "lib": "this",
+                        "type": "version"
                     }
                 ],
                 "childFolder": "web"

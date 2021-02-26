@@ -9,7 +9,7 @@
   "dependencies": {
     "electron": "~9.0.0",
     "core-js": "~3.6.5",
-    "apogeejs-app-bundle": "[APOGEE_BUNDLE_VERSION]"
+    "apogeejs-app-bundle": "[APOGEE_BUNDLE_DEP_VERSION]"
   },
   "author": "Dave Sutter",
   "preferGlobal": true,
