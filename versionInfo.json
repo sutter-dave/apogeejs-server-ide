@@ -6,6 +6,6 @@
         "apogeejs-app-bundle": {"version": "2.0.0-p1", "isProductionRelease": false}
     },
     "additionalValues": {
-        "APOGEE_BUNDLE_DEP_VERSION": "./apogeejs-app-bundle"
+        "APOGEE_BUNDLE_DEP_VERSION": "2.0.0-p1"
     }
 }
