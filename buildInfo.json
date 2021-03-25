@@ -15,8 +15,8 @@
                     },
                     {
                         "marker": "[APOGEE_BUNDLE_DEP_VERSION]",
-                        "valueName": "APOGEE_BUNDLE_DEP_VERSION",
-                        "type": "additionalValue"
+                        "lib": "apogeejs-app-bundle",
+                        "type": "npmVersion"
                     }
                 ]
             },
