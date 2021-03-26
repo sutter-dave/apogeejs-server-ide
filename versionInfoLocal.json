@@ -2,7 +2,7 @@
     "version": "2.0.0-local",
     "isProductionRelease": false,
     "suppressReleasePresentCheck": true,
-    "buildInfoUrl": "/apogeejs-electron-node/buildInfo.json", 
+    "buildInfoUrl": "/apogeejs-server-ide/buildInfo.json", 
     "dependentVersions": {
         "apogeejs-app-bundle": {"version": "2.0.0-local", "isProductionRelease": false}
     },

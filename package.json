@@ -15,7 +15,6 @@
     "apogeejs-app-bundle": "[APOGEE_BUNDLE_DEP_VERSION]"
   },
   "author": "Dave Sutter",
-  "preferGlobal": true,
   "bin": {
     "apogeejs-server-ide": "./electron-cli.js"
   }
