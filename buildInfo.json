@@ -1,73 +1,112 @@
 {
     "repoName": "apogeejs-server-ide",
-
-    "npmModule": {
-        "taskList": [
-            {
-                "type": "copyAndReplace",
-                "srcFileUrl": "/apogeejs-server-ide/package.json",
-                "replacementList": [
-                    {
-                        "marker": "[RELEASE_VERSION]",
-                        "lib": "this",
-                        "type": "version"
-                        
-                    },
-                    {
-                        "marker": "[APOGEE_BUNDLE_DEP_VERSION]",
-                        "lib": "apogeejs-app-bundle",
-                        "type": "npmVersion"
-                    }
-                ]
-            },
-            {
-                "type": "copyFileList",
-                "srcFileUrlList": [
-                    "/apogeejs-app-bundle/style/apogeeAppBundle.css"
-                ],
-                "childFolder": "style"
-            },
-            {
-                "type": "copyFileList",
-                "srcFileUrlList": [
-                    "/apogeejs-app-bundle/resources/**/*"
-                ],
-                "childFolder": "resources"
-            },
-            {
-                "type": "copyFileList",
-                "srcFileUrlList": [
-                    "/apogeejs-app-bundle/ace_includes/**/*"
-                ],
-                "childFolder": "ace_includes"
-            },
-            {
-                "type": "copyFileList",
-                "srcFileUrlList": [
-                    "/apogeejs-app-bundle/src/debugHook.js",
-                    "/apogeejs-app-bundle/src/nodeGlobals.js",
-                    "/apogeejs-server-ide/src/**/*"
-                ],
-                "childFolder": "src"
-            },
-            {
-                "type": "copyFileList",
-                "srcFileUrlList": [
-                    "/apogeejs-server-ide/electron-cli.js"
-                ]
-            },
-            {
-                "type": "copyAndReplace",
-                "srcFileUrl": "/apogeejs-server-ide/web/apogee.html",
-                "replacementList": [
-                    {
-                        "marker": "[RELEASE_VERSION]",
-                        "lib": "this",
-                        "type": "version"
-                    }
-                ],
-                "childFolder": "web"
+    "taskList": [
+        {
+            "type": "copyFileList",
+            "srcFileUrlList": [
+                "/apogeejs-server-ide/versionInfo.json"
+            ]
+        },
+        {
+            "type": "copyAndReplace",
+            "srcFileUrl": "/apogeejs-server-ide/package.json",
+            "replacementList": [
+                {
+                    "marker": "2.0.0-DEV-VERSION",
+                    "lib": "this",
+                    "type": "version"
+                }
+            ]
+        },
+        {
+            "type": "copyAndReplace",
+            "srcFileUrl": "/apogeejs-server-ide/web/apogee.html",
+            "replacementList": [
+                {
+                    "marker": "[RELEASE_VERSION]",
+                    "lib": "this",
+                    "type": "version"
+                }
+            ],
+            "childFolder": "web"
+        },
+        {
+            "type": "copyFileList",
+            "srcFileUrlList": [
+                "/apogeejs-server0-ide/electron-cli.js"
+            ]
+        },
+        {
+            "type": "copyFileList",
+            "srcFileUrlList": [
+                "/apogeejs-server-ide/src/**/*"
+            ],
+            "childFolder": "src"
+        },
+        {
+            "type": "copyFileList",
+            "srcFileUrlList": [
+                "/apogeejs-admin/ext/ace/ace_1.4.3/ace_includes/**/*"
+            ],
+            "childFolder": "ace_includes"
+        },
+        {
+            "type": "concatFileList",
+            "srcFileUrlList": [
+                "/apogeejs-view-lib/style/apogeeapp.css",
+                "/apogeejs-app-bundle/style/LiteratePage.css",
+                "/apogeejs-view-lib/style/ComponentDisplay.css",
+                "/apogeejs-app-bundle/style/ApogeeToolbar.css",
+                "/apogeejs-ui-lib/style/dialog.css",
+                "/apogeejs-ui-lib/style/DisplayAndHeader.css",
+                "/apogeejs-ui-lib/style/Menu.css",
+                "/apogeejs-ui-lib/style/SplitPane.css",
+                "/apogeejs-ui-lib/style/TabFrame.css",
+                "/apogeejs-ui-lib/style/TreeControl.css",
+                "/apogeejs-ui-lib/style/ConfigurablePanel.css",
+                "/apogeejs-ui-lib/style/listElement.css",
+                "/apogeejs-ui-lib/style/tooltip.css",  
+                "/prosemirror-admin/compiledCss/editor.css",    
+                "/apogeejs-admin/ext/handsontable/handsontable_6.2.0/handsontable.full.min.css"
+            ],
+            "destFileName": "apogeeAppBundle.css",
+            "childFolder": "apogeejs-app-bundle/style"
+        },
+        {
+            "type": "copyFileList",
+            "srcFileUrlList": [
+                "/apogeejs-ui-lib/resources/**/*",
+                "/apogeejs-app-bundle/resources/**/*"
+            ],
+            "childFolder": "apogeejs-app-bundle/resources"
+        },
+        {
+            "type": "copyFileList",
+            "srcFileUrlList": [
+                "/apogeejs-model-lib/src/debugHook.js",
+                "/apogeejs-model-lib/src/nodeGlobals.js"
+            ],
+            "childFolder": "apogeejs-app-bundle/src"
+        },
+        {
+            "type": "packageLib",
+            "format": "cjs",
+            "sourceFileUrl": "/apogeejs-app-bundle/src/apogeeAppBundle.js",
+            "outputFileName": "apogeejs-app-bundle.js",
+            "childFolder": "apogeejs-app-bundle/src",
+            "externalLibMapping": {
+                "/apogeejs-admin/ext/esprima/esprima_2.7.3/esprima.es.js": "esprima",
+                "/apogeejs-admin/ext/ace/ace_1.4.3/ace.es.js": "ace-builds",
+                "/apogeejs-admin/ext/handsontable/handsontable_6.2.0/handsontable.es.js": "handsontable",
+                "/prosemirror-admin/dist/prosemirror-model.es.js": "prosemirror-model",
+                "/prosemirror-admin/dist/prosemirror-state.es.js": "prosemirror-state",
+                "/prosemirror-admin/dist/prosemirror-transform.es.js": "prosemirror-transform",
+                "/prosemirror-admin/dist/prosemirror-view.es.js": "prosemirror-view",
+                "/prosemirror-admin/dist/prosemirror-keymap.es.js": "prosemirror-keymap",
+                "/prosemirror-admin/dist/prosemirror-commands.es.js": "prosemirror-commands",
+                "/prosemirror-admin/dist/prosemirror-gapcursor.es.js": "prosemirror-gapcursor"
             }
-        ]
-    }
+        }
+    ]
+
 }

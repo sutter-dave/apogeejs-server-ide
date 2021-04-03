@@ -4,10 +4,10 @@
 		<title></title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <script type="text/javascript" src="../src/nodeGlobals.js"></script>
-        <script type="text/javascript" src="../src/debugHook.js"></script>
+        <script type="text/javascript" src="../apogeejs-app-bundle/src/nodeGlobals.js"></script>
+        <script type="text/javascript" src="../apogeejs-app-bundle/src/debugHook.js"></script>
         <script type="text/javascript">
-            require("apogeejs-app-bundle");
+            require("../apogeejs-app-bundle/src/apogeejs-app-bundle.js");
             const ElectronNodeAppConfigManager = require("../src/ElectronNodeAppConfigManager.js");
 
             const __apogee_version__ = "[RELEASE_VERSION]";
@@ -15,12 +15,12 @@
 
             let appConfigManager = new ElectronNodeAppConfigManager();
             const includePathInfo = {
-                "resources": "../resources",
+                "resources": "../apogeejs-app-bundle/resources",
                 "aceIncludes": "../ace_includes"
             };
         </script>
 
-        <link rel="stylesheet" type="text/css" href="../style/apogeeAppBundle.css">
+        <link rel="stylesheet" type="text/css" href="../apogeejs-app-bundle/style/apogeeAppBundle.css">
 
 	</head>
 	<body onload="appInit(appConfigManager,includePathInfo)">
