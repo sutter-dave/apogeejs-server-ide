@@ -2,12 +2,6 @@
     "repoName": "apogeejs-server-ide",
     "taskList": [
         {
-            "type": "copyFileList",
-            "srcFileUrlList": [
-                "/apogeejs-server-ide/versionInfo.json"
-            ]
-        },
-        {
             "type": "copyAndReplace",
             "srcFileUrl": "/apogeejs-server-ide/package.json",
             "replacementList": [
@@ -33,7 +27,9 @@
         {
             "type": "copyFileList",
             "srcFileUrlList": [
-                "/apogeejs-server0-ide/electron-cli.js"
+                "/apogeejs-server-ide/electron-cli.js",
+                "/apogeejs-server-ide/LICENSE",
+                "/apogeejs-server-ide/README.md"
             ]
         },
         {
@@ -53,19 +49,9 @@
         {
             "type": "concatFileList",
             "srcFileUrlList": [
-                "/apogeejs-view-lib/style/apogeeapp.css",
-                "/apogeejs-app-bundle/style/LiteratePage.css",
-                "/apogeejs-view-lib/style/ComponentDisplay.css",
-                "/apogeejs-app-bundle/style/ApogeeToolbar.css",
-                "/apogeejs-ui-lib/style/dialog.css",
-                "/apogeejs-ui-lib/style/DisplayAndHeader.css",
-                "/apogeejs-ui-lib/style/Menu.css",
-                "/apogeejs-ui-lib/style/SplitPane.css",
-                "/apogeejs-ui-lib/style/TabFrame.css",
-                "/apogeejs-ui-lib/style/TreeControl.css",
-                "/apogeejs-ui-lib/style/ConfigurablePanel.css",
-                "/apogeejs-ui-lib/style/listElement.css",
-                "/apogeejs-ui-lib/style/tooltip.css",  
+                "/apogeejs-view-lib/style/**/*",
+                "/apogeejs-app-bundle/style/**/*",
+                "/apogeejs-ui-lib/style/**/*",
                 "/prosemirror-admin/compiledCss/editor.css",    
                 "/apogeejs-admin/ext/handsontable/handsontable_6.2.0/handsontable.full.min.css"
             ],

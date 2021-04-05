@@ -1,6 +1,7 @@
 {
+    "repoName": "apogeejs-server-ide",
     "version": "2.0.0-p1",
-    "isProductionRelease": false,
-    "suppressReleasePresentCheck": true,
+    "isProductionRelease": true,
+    "suppressReleasePresentCheck": false,
     "buildInfoUrl": "/apogeejs-server-ide/buildInfo.json"
 }
