@@ -8,12 +8,15 @@
         <script type="text/javascript" src="../apogeejs-app-bundle/src/debugHook.js"></script>
         <script type="text/javascript">
             require("../apogeejs-app-bundle/src/apogeejs-app-bundle.js");
-            const ElectronNodeAppConfigManager = require("../src/ElectronNodeAppConfigManager.js");
 
             const __apogee_version__ = "[RELEASE_VERSION]";
             const __browser__ = false;
 
-            let appConfigManager = new ElectronNodeAppConfigManager();
+            const ElectronNodeFileAccess = require("../src/ElectronNodeFileAccess.js");
+            apogeeplatform.setFileAccessObject(new ElectronNodeFileAccess);
+            const NodeModuleManager = require("../src/NodeModuleManager.js");
+            apogeeplatform.setNodeModuleClass(NodeModuleManager);
+
             const includePathInfo = {
                 "resources": "../apogeejs-app-bundle/resources",
                 "aceIncludes": "../ace_includes"
@@ -23,7 +26,7 @@
         <link rel="stylesheet" type="text/css" href="../apogeejs-app-bundle/style/apogeeAppBundle.css">
 
 	</head>
-	<body onload="appInit(appConfigManager,includePathInfo)">
+	<body onload="appInit(includePathInfo)">
         <div id="appContainer"></div>
 	</body>
 </html>
