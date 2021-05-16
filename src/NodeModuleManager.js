@@ -22,20 +22,20 @@ export default class NodeModuleManager extends SimpleModuleManager {
     receiveMessage(event) {
         switch(event.data.message) {
 
-            case "installAndAddModule": 
-                this.installAndAddModuleCommand(event.data.value);
+            case "installAndLoadNpmModule": 
+                this.installAndLoadNpmModuleCommand(event.data.value);
                 break;
 
-            case "installModule": 
-                this.installModuleCommand(event.data.value);
+            case "installNpmModule": 
+                this.installNpmModuleCommand(event.data.value);
                 break;
 
-            case "uninstallModule": 
+            case "uninstallNpmModule": 
                 this.uninstallModuleCommand(event.data.value);
                 break;
 
-            case "installModuleAndOpenWorkspace":
-                this.installModuleAndOpenWorkspaceCommand(event.data.value);
+            case "uninstallNpmModuleAndOpenWorkspace":
+                this.installNpmModuleAndOpenWorkspaceCommand(event.data.value);
                 break;
 
             default:
@@ -43,16 +43,14 @@ export default class NodeModuleManager extends SimpleModuleManager {
         }
     }
 
-    async installAndAddModuleCommand(commandData) {
-        let moduleName = commandData.moduleName;
-        if(!moduleName) {
+    async installAndLoadNpmModuleCommand(commandData) {
+        if(!commandData.moduleName) {
             apogeeUserAlert("Install and add module failed: missing module name.");
             return;
         }
-
         try {
-            await this.installModule(moduleName);
-            this.addModule(moduleName);
+            await this.installNpmModule(commandData.moduleName,commandData.moduleVersion);
+            this.loadModule(commandData.moduleName,commandData.moduleName);
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -61,15 +59,14 @@ export default class NodeModuleManager extends SimpleModuleManager {
         }
     }
 
-    async installModuleCommand(commandData) {
-        let moduleName = commandData.moduleName;
-        if(!moduleName) {
+    async installNpmModuleCommand(commandData) {
+        if(!commandData.moduleName) {
             apogeeUserAlert("Install module failed: missing module name.");
             return;
         }
 
         try {
-            await this.installModule(moduleName);
+            await this.installNpmModule(commandData.moduleName,commandData.moduleVersion);
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -78,15 +75,14 @@ export default class NodeModuleManager extends SimpleModuleManager {
         }
     }
 
-    uninstallModuleCommand(commandData) {
-        let moduleName = commandData.moduleName;
-        if(!moduleName) {
+    uninstallNpmModuleCommand(commandData) {
+        if(!commandData.moduleName) {
             apogeeUserAlert("Uninstall module failed: missing module name.");
             return;
         }
 
         try {
-            await this.uninstallModule(moduleName);
+            await this.uninstallNpmModule(commandData.moduleName);
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -95,21 +91,19 @@ export default class NodeModuleManager extends SimpleModuleManager {
         }
     }
 
-    async installModuleAndOpenWorkspaceCommand(commandData) {
-        let moduleName = commandData.moduleName;
-        if(!moduleName) {
+    async installNpmModuleAndOpenWorkspaceCommand(commandData) {
+        if(!commandData.moduleName) {
             apogeeUserAlert("Install Module and open workspace failed: missing module name.");
             return;
         }
-        let workspaceUrl = commandData.workspaceUrl;
-        if(!workspaceUrl) {
+        if(!commandData.workspaceUrl) {
             apogeeUserAlert("Install Module and open workspace failed: missing workspace URL.");
             return;
         }
 
         try {
-            await this.installModule(moduleName);
-            apogeeplatform.spawnWorkspaceFromUrl(workspaceUrl);
+            await this.installNpmModule(commandData.moduleName,commandData.moduleVersion);
+            apogeeplatform.spawnWorkspaceFromUrl(commandData.workspaceUrl);
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -122,11 +116,13 @@ export default class NodeModuleManager extends SimpleModuleManager {
     // Command Execution Functions
     //--------------------------
 
-    async installModule(npmModuleName) {
-        return this.getShellCommandPromise("npm install " + npmModuleName);
+    async installNpmModule(npmModuleName,npmModuleVersion) {
+        let text = "npm install " + npmModuleName;
+        if(npmModuleVersion !== undefined) text += "@" + npmModuleVersion;
+        return this.getShellCommandPromise(text);
     }
 
-    async uninstallModule(npmModuleName) {
+    async uninstallNpmModule(npmModuleName) {
         return this.getShellCommandPromise("npm uninstall " + npmModuleName);
     }
 
