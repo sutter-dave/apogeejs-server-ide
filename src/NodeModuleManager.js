@@ -20,22 +20,25 @@ export default class NodeModuleManager extends SimpleModuleManager {
     }
 
     receiveMessage(event) {
+        //make sure this is from the right window
+        if(!this.isMyMessage(event)) return;
+
         switch(event.data.message) {
 
             case "installAndLoadNpmModule": 
-                this.installAndLoadNpmModuleCommand(event.data.value);
+                this.installAndLoadNpmModuleCommand(event.data.value.messageData);
                 break;
 
             case "installNpmModule": 
-                this.installNpmModuleCommand(event.data.value);
+                this.installNpmModuleCommand(event.data.value.messageData);
                 break;
 
             case "uninstallNpmModule": 
-                this.uninstallModuleCommand(event.data.value);
+                this.uninstallModuleCommand(event.data.value.messageData);
                 break;
 
             case "uninstallNpmModuleAndOpenWorkspace":
-                this.installNpmModuleAndOpenWorkspaceCommand(event.data.value);
+                this.installNpmModuleAndOpenWorkspaceCommand(event.data.value.messageData);
                 break;
 
             default:
