@@ -2,7 +2,7 @@ const SimpleModuleManager = require("../apogeejs-simple-module-manager/src/Simpl
 
 /** This class manages addition and removal of apogee modules from the NODE apogee platform. It extends
  * the simple (web) module manager to add functions for installing and uninstalling modules. */
-export default class NodeModuleManager extends SimpleModuleManager {
+class NodeModuleManager extends SimpleModuleManager {
     constructor(app) {
         super(app);
     }
@@ -11,8 +11,25 @@ export default class NodeModuleManager extends SimpleModuleManager {
     // Protected Methods
     //==========================
 
-    getModuleManagerUrl() {
-        return REMOTE_NODE_MODULE_MANAGER_URL;
+    getAppModulesData() {
+        let referenceManager = this.app.getWorkspaceManager().getReferenceManager();
+        let moduleList = referenceManager.getModuleList(this.getModuleType());
+        let appModuleData = {
+            app: "TBD",
+            version: "TBD",
+            moduleType: this.getModuleType(),
+            npmModules: {
+                installed: {
+                    "apogeejs-module-csv": "1.3.4-p1"
+                },
+                loaded: moduleList,
+            }
+        }
+        return appModuleData;
+    }
+
+    getModuleManagerUrl(appModulesData) {
+        return REMOTE_NODE_MODULE_MANAGER_URL + `?appModules=${JSON.stringify(appModulesData)}&windowId=${this.childWindowId}&moduleType=${this.getModuleType()}`;
     }
 
     getModuleType() {
@@ -23,22 +40,23 @@ export default class NodeModuleManager extends SimpleModuleManager {
         //make sure this is from the right window
         if(!this.isMyMessage(event)) return;
 
+        let commandData = event.data.value.commandData;
         switch(event.data.message) {
 
             case "installAndLoadNpmModule": 
-                this.installAndLoadNpmModuleCommand(event.data.value.messageData);
+                this.installAndLoadNpmModuleCommand(commandData);
                 break;
 
             case "installNpmModule": 
-                this.installNpmModuleCommand(event.data.value.messageData);
+                this.installNpmModuleCommand(commandData);
                 break;
 
             case "uninstallNpmModule": 
-                this.uninstallModuleCommand(event.data.value.messageData);
+                this.uninstallNpmModuleCommand(commandData);
                 break;
 
             case "uninstallNpmModuleAndOpenWorkspace":
-                this.installNpmModuleAndOpenWorkspaceCommand(event.data.value.messageData);
+                this.installNpmModuleAndOpenWorkspaceCommand(commandData);
                 break;
 
             default:
@@ -47,12 +65,12 @@ export default class NodeModuleManager extends SimpleModuleManager {
     }
 
     async installAndLoadNpmModuleCommand(commandData) {
-        if(!commandData.moduleName) {
-            apogeeUserAlert("Install and add module failed: missing module name.");
+        if(!commandData.installArg) {
+            apogeeUserAlert("Install and add module failed: missing module install data.");
             return;
         }
         try {
-            await this.installNpmModule(commandData.moduleName,commandData.moduleVersion);
+            await this.installNpmModule(commandData.installArg);
             this.loadModule(commandData.moduleName,commandData.moduleName);
         }
         catch(error) {
@@ -63,13 +81,13 @@ export default class NodeModuleManager extends SimpleModuleManager {
     }
 
     async installNpmModuleCommand(commandData) {
-        if(!commandData.moduleName) {
-            apogeeUserAlert("Install module failed: missing module name.");
+        if(!commandData.installArg) {
+            apogeeUserAlert("Install module failed: missing module install data.");
             return;
         }
 
         try {
-            await this.installNpmModule(commandData.moduleName,commandData.moduleVersion);
+            await this.installNpmModule(commandData.installArg);
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -78,7 +96,7 @@ export default class NodeModuleManager extends SimpleModuleManager {
         }
     }
 
-    uninstallNpmModuleCommand(commandData) {
+    async uninstallNpmModuleCommand(commandData) {
         if(!commandData.moduleName) {
             apogeeUserAlert("Uninstall module failed: missing module name.");
             return;
@@ -95,8 +113,8 @@ export default class NodeModuleManager extends SimpleModuleManager {
     }
 
     async installNpmModuleAndOpenWorkspaceCommand(commandData) {
-        if(!commandData.moduleName) {
-            apogeeUserAlert("Install Module and open workspace failed: missing module name.");
+        if(!commandData.installArg) {
+            apogeeUserAlert("Install Module and open workspace failed: missing module install data.");
             return;
         }
         if(!commandData.workspaceUrl) {
@@ -105,7 +123,7 @@ export default class NodeModuleManager extends SimpleModuleManager {
         }
 
         try {
-            await this.installNpmModule(commandData.moduleName,commandData.moduleVersion);
+            await this.installNpmModule(commandData.installArg);
             apogeeplatform.spawnWorkspaceFromUrl(commandData.workspaceUrl);
         }
         catch(error) {
@@ -119,9 +137,8 @@ export default class NodeModuleManager extends SimpleModuleManager {
     // Command Execution Functions
     //--------------------------
 
-    async installNpmModule(npmModuleName,npmModuleVersion) {
-        let text = "npm install " + npmModuleName;
-        if(npmModuleVersion !== undefined) text += "@" + npmModuleVersion;
+    async installNpmModule(npmInstallArg) {
+        let text = "npm install " + npmInstallArg;
         return this.getShellCommandPromise(text);
     }
 
@@ -153,5 +170,7 @@ export default class NodeModuleManager extends SimpleModuleManager {
 }
 
 
-const REMOTE_NODE_MODULE_MANAGER_URL = "http://localhost:8888/test/modules/moduleMgrNode.html";
+const REMOTE_NODE_MODULE_MANAGER_URL = "http://localhost:8888/apogeejs-admin/dev/moduleManager/moduleMgr.html";
 const NODE_MODULE_TYPE = "npm module";
+
+module.exports = NodeModuleManager;

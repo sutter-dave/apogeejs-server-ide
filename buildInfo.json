@@ -92,6 +92,13 @@
                 "/apogeejs-releases/releases/ext/prosemirror/a2.0.0/prosemirror-commands.es.js": "prosemirror-commands",
                 "/apogeejs-releases/releases/ext/prosemirror/a2.0.0/prosemirror-gapcursor.es.js": "prosemirror-gapcursor"
             }
+        },
+        {
+            "type": "packageLib",
+            "format": "cjs",
+            "sourceFileUrl": "/apogeejs-simple-module-manager/src/SimpleModuleManager.js",
+            "outputFileName": "SimpleModuleManager.js",
+            "childFolder": "apogeejs-simple-module-manager/src"
         }
     ]
 

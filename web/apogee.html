@@ -13,9 +13,9 @@
             const __browser__ = false;
 
             const ElectronNodeFileAccess = require("../src/ElectronNodeFileAccess.js");
-            apogeeplatform.setFileAccessObject(new ElectronNodeFileAccess);
+            apogeeplatform.setFileAccessObject(new ElectronNodeFileAccess());
             const NodeModuleManager = require("../src/NodeModuleManager.js");
-            apogeeplatform.setNodeModuleClass(NodeModuleManager);
+            apogeeplatform.setModuleManagerClass(NodeModuleManager);
 
             const includePathInfo = {
                 "resources": "../apogeejs-app-bundle/resources",
