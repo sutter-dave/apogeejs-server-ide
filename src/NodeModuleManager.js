@@ -11,25 +11,20 @@ class NodeModuleManager extends SimpleModuleManager {
     // Protected Methods
     //==========================
 
-    getAppModulesData() {
+    async getAppModulesData() {
         let referenceManager = this.app.getWorkspaceManager().getReferenceManager();
         let moduleList = referenceManager.getModuleList(this.getModuleType());
+        let installedModules = await this.getInstalledModules();
         let appModuleData = {
             app: "TBD",
             version: "TBD",
             moduleType: this.getModuleType(),
             npmModules: {
-                installed: {
-                    "apogeejs-module-csv": "1.3.4-p1"
-                },
+                installed: installedModules,
                 loaded: moduleList,
             }
         }
         return appModuleData;
-    }
-
-    getModuleManagerUrl(appModulesData) {
-        return REMOTE_NODE_MODULE_MANAGER_URL + `?appModules=${JSON.stringify(appModulesData)}&windowId=${this.childWindowId}&moduleType=${this.getModuleType()}`;
     }
 
     getModuleType() {
@@ -71,7 +66,10 @@ class NodeModuleManager extends SimpleModuleManager {
         }
         try {
             await this.installNpmModule(commandData.installArg);
-            this.loadModule(commandData.moduleName,commandData.moduleName);
+            let cmdDone = this.loadModule(commandData.moduleName,commandData.moduleName);
+            if(cmdDone) {
+                this.sendModulesUpdate();
+            }
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -88,6 +86,7 @@ class NodeModuleManager extends SimpleModuleManager {
 
         try {
             await this.installNpmModule(commandData.installArg);
+            this.sendModulesUpdate();
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -104,6 +103,7 @@ class NodeModuleManager extends SimpleModuleManager {
 
         try {
             await this.uninstallNpmModule(commandData.moduleName);
+            this.sendModulesUpdate();
         }
         catch(error) {
             if(error.stack) console.error(error.stack);
@@ -124,6 +124,7 @@ class NodeModuleManager extends SimpleModuleManager {
 
         try {
             await this.installNpmModule(commandData.installArg);
+            this.sendModulesUpdate();
             apogeeplatform.spawnWorkspaceFromUrl(commandData.workspaceUrl);
         }
         catch(error) {
@@ -167,10 +168,33 @@ class NodeModuleManager extends SimpleModuleManager {
         })
     }
 
+    //========================
+    // Private Methods
+    //========================
+
+    async getInstalledModules() {
+        try {
+            const fsPromises = require('fs/promises');
+            let packageLockText = await fsPromises.readFile("package-lock.json");
+
+            let packageLockJson = JSON.parse(packageLockText);
+            
+            let installedModules = {};
+            if(packageLockJson.dependencies) {
+                for(let module in packageLockJson.dependencies) {
+                    installedModules[module] = packageLockJson.dependencies[module].version;
+                }   
+            }
+            return installedModules;
+        }
+        catch(loadError) {
+            console.log(loadError.toString());
+            if(loadError.stack) console.error(loadError.stack);
+            throw new Error("Error loading workspace file " + fileName);
+        }
+    }
 }
 
-
-const REMOTE_NODE_MODULE_MANAGER_URL = "http://localhost:8888/apogeejs-admin/dev/moduleManager/moduleMgr.html";
 const NODE_MODULE_TYPE = "npm module";
 
 module.exports = NodeModuleManager;
