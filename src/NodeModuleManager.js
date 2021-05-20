@@ -19,7 +19,7 @@ class NodeModuleManager extends SimpleModuleManager {
             app: "TBD",
             version: "TBD",
             moduleType: this.getModuleType(),
-            npmModules: {
+            modules: {
                 installed: installedModules,
                 loaded: moduleList,
             }
