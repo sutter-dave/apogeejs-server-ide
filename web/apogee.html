@@ -15,7 +15,12 @@
             const ElectronNodeFileAccess = require("../src/ElectronNodeFileAccess.js");
             apogeeplatform.setFileAccessObject(new ElectronNodeFileAccess());
             const NodeModuleManager = require("../src/NodeModuleManager.js");
-            apogeeplatform.setModuleManagerClass(NodeModuleManager);
+            const moduleManagerOptions = {
+                openLinkFromApp: true
+            }
+            apogeeplatform.setModuleManagerClass(NodeModuleManager,moduleManagerOptions);
+            const NodeExternalOpener = require("../src/NodeExternalOpener.js");
+            apogeeplatform.setExternalOpener(new NodeExternalOpener());
 
             const includePathInfo = {
                 "resources": "../apogeejs-app-bundle/resources",

@@ -3,8 +3,8 @@ const SimpleModuleManager = require("../apogeejs-simple-module-manager/src/Simpl
 /** This class manages addition and removal of apogee modules from the NODE apogee platform. It extends
  * the simple (web) module manager to add functions for installing and uninstalling modules. */
 class NodeModuleManager extends SimpleModuleManager {
-    constructor(app) {
-        super(app);
+    constructor(app,options) {
+        super(app,options);
     }
 
     //==========================
