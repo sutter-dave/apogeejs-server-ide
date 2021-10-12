@@ -195,6 +195,6 @@ class NodeModuleManager extends SimpleModuleManager {
     }
 }
 
-const NODE_MODULE_TYPE = "npm module";
+const NODE_MODULE_TYPE = "node apogee module";
 
 module.exports = NodeModuleManager;
