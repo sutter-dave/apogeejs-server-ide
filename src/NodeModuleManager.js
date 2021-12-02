@@ -50,7 +50,7 @@ class NodeModuleManager extends SimpleModuleManager {
                 this.uninstallNpmModuleCommand(commandData);
                 break;
 
-            case "uninstallNpmModuleAndOpenWorkspace":
+            case "installNpmModuleAndOpenWorkspace":
                 this.installNpmModuleAndOpenWorkspaceCommand(commandData);
                 break;
 
